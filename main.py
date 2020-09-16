@@ -1,15 +1,7 @@
-# This is a sample Python script.
-
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 import re
 import ast
+from statistics import mean, stdev
 from collections import defaultdict
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
 
 
 def add_missing_newlines(line: str):
@@ -85,17 +77,46 @@ def make_arguments_vector(model_args, data_args):
     return {**model_args, **data_args}
 
 
-def write_model_arguments_data(model_arguments_stats):
-    pass
+def write_model_arguments_data(model_arguments_stats, filename):
+    with open(filename, 'w') as file:
+        for model in model_arguments_data.keys():
+            file.write(model + ":\n")
+            for args in model_arguments_stats[model]:
+                file.write(str(args) + '\n')
+
+
+def print_model_arguments_stats(model_arguments_data, model):
+    if model not in model_arguments_data.keys():
+        raise RuntimeError('Model ' + model + ' not found.')
+    model_data = model_arguments_data[model]
+    all_args = []
+    for item in model_data:
+        for arg in item:
+            if arg not in all_args:
+                all_args.append(arg)
+    for arg in all_args:
+        if not (isinstance(model_data[0][arg], int) or isinstance(model_data[0][arg], float)):
+            continue
+        args = []
+        for i in range(len(model_data)):
+            if arg not in model_data[i]:
+                continue
+            args.append(model_data[i][arg])
+        if len(args) > 1:
+            print(f'{arg}: mean: {mean(args)}, min: {min(args)}, max: {max(args)}, standard diviation: {stdev(args)}')
+        else:
+            print(f'{arg}: mean: {mean(args)}, min: {min(args)}, max: {max(args)}')
 
 
 if __name__ == '__main__':
     data_file = open('data.txt', 'r')
+    filename = "data_args.txt"
     lines = []
+    #todo read data from file without newlines
     tmp_dict = [
         "Модель 1: X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)\nxg_reg = xgb.XGBRegressor(objective ='reg:linear', colsample_bytree = 0.3, learning_rate = 0.1, max_depth = 5, alpha = 10, n_estimators = 10)\nxg_reg.fit(X_train,y_train)",
-    "Модель 2: X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)\nxg_reg = xgb.XGBRegressor(objective ='reg:linear', colsample_bytree = 0.5, learning_rate = 0.0001, n_estimators = 10)\nxg_reg.fit(X_train,y_train)",
-    "Модель 3: X = [[0, 0], [2, 2]]\ny = [0.5, 2.5]\nregr = svm.SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,coef0=1)\nregr.fit(X, y)"]
+        "Модель 2: X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)\nxg_reg = xgb.XGBRegressor(objective ='reg:linear', colsample_bytree = 0.5, learning_rate = 0.0001, n_estimators = 10)\nxg_reg.fit(X_train,y_train)",
+        "Модель 3: X = [[0, 0], [2, 2]]\ny = [0.5, 2.5]\nregr = svm.SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,coef0=1)\nregr.fit(X, y)"]
     model_arguments_data = defaultdict(list)
 
     for line in tmp_dict:
@@ -107,5 +128,5 @@ if __name__ == '__main__':
         args_vector = make_arguments_vector(model_args, data_args)
         model_arguments_data[model_class].append(args_vector)
 
-    write_model_arguments_data(model_arguments_data, file='')
-    print_model_arguments_stats(model_arguments_data, model='')
+    write_model_arguments_data(model_arguments_data, filename=filename)
+    print_model_arguments_stats(model_arguments_data, model='XGBRegressor')
